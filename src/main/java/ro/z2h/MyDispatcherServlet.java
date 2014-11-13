@@ -14,7 +14,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by user on 11/11/2014.
@@ -57,18 +60,27 @@ public class MyDispatcherServlet extends HttpServlet {
 
         String pathInfo = req.getPathInfo();
         MethodAttributes methodAttributes = hashMap.get(pathInfo);
-
+        req.getParameterMap();
 
         try {
             String controllerClass = methodAttributes.getControllerClass();
             String methodName = methodAttributes.getMethodName();
 
+
             Class<?> appController = Class.forName(controllerClass);
             Object appControllerInstance = appController.newInstance();
-            Method method= appController.getMethod(methodName);
-            Object answer = method.invoke(appControllerInstance);
+            Method method= appController.getMethod(methodName,methodAttributes.getMethodParameter());
 
-            return answer;
+
+            Parameter[] realParameters = method.getParameters();
+            List<String> parameterval= new ArrayList<String>();
+
+
+            for(Parameter parameter: realParameters) {
+                parameterval.add(req.getParameter(parameter.getName()));
+                }
+
+            return method.invoke(appControllerInstance, (String[]) parameterval.toArray(new String[0]));
 
 
         } catch (InstantiationException e) {
@@ -130,6 +142,8 @@ public class MyDispatcherServlet extends HttpServlet {
                         methAttributes.setControllerClass(aClass.getName());
                         methAttributes.setMethodName(method1.getName());
                         methAttributes.setMethodType(method1Annotation.methodType());
+                        methAttributes.setMethodParameter(method1.getParameterTypes());
+
                         hashMap.put(urlKey, methAttributes);
 
                     }
